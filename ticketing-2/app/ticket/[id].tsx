@@ -99,13 +99,10 @@ export default function TicketDetail() {
   //UserName
 const authorId = ticket?.ticket?.author || null;
 const assignedId = ticket?.ticket?.assigned_to || null;
-console.log('authorId:', authorId);
-console.log('assignedId:', assignedId);
+
 
 const authorName = useUserName(authorId);
 const assignedName = useUserName(assignedId);
-console.log('authorName:', authorName);
-console.log('assignedName:', assignedName);
 
 
   if (loading) {

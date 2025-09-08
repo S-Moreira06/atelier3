@@ -16,6 +16,8 @@ type Ticket = {
   created: string;
   status: string;
   priority: string;
+  author: string;
+  authorName?: string;
 };
 
 type Stats = {
@@ -27,7 +29,6 @@ type Stats = {
   };
 };
 
-
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -36,128 +37,159 @@ export default function Dashboard() {
   const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
 
   useEffect(() => {
-  const fetchStats = async () => {
-    try {
-      const token = await SecureStore.getItemAsync('userToken');
-      if (!token) throw new Error('Token manquant');
+    const fetchStats = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+        if (!token) throw new Error('Token manquant');
 
-      const resStats = await fetch(
-        'https://ticketing.development.atelier.ovh/api/mobile/dashboard/stats',
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!resStats.ok) throw new Error(`Erreur ${resStats.status}`);
-      const statsJson = await resStats.json();
-      console.log('stats:', statsJson)
-      setStats(statsJson);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+        const resStats = await fetch(
+          'https://ticketing.development.atelier.ovh/api/mobile/dashboard/stats',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!resStats.ok) throw new Error(`Erreur ${resStats.status}`);
+        const statsJson = await resStats.json();
+        setStats(statsJson);
+      } catch (err: any) {
+        setError(err.message);
+      }
+    };
 
-  const fetchDashboard = async () => {
-    try {
-      const token = await SecureStore.getItemAsync('userToken');
-      if (!token) throw new Error('Token manquant');
+    const fetchDashboard = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('userToken');
+        if (!token) throw new Error('Token manquant');
 
-      const resTickets = await fetch(
-        'https://ticketing.development.atelier.ovh/api/mobile/dashboard',
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!resTickets.ok) throw new Error(`Erreur ${resTickets.status}`);
-      const ticketsJson = await resTickets.json();
+        const resTickets = await fetch(
+          'https://ticketing.development.atelier.ovh/api/mobile/dashboard',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!resTickets.ok) throw new Error(`Erreur ${resTickets.status}`);
 
-      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const tickets = ticketsJson.recentTickets.filter(
-        (t: any) =>
-          t.status === 'opened' && new Date(t.created).getTime() >= oneWeekAgo
-      );
-      setRecentTickets(tickets);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+        const ticketsJson = await resTickets.json();
 
-  const fetchAll = async () => {
-    setLoading(true);
-    await Promise.all([fetchStats(), fetchDashboard()]);
-    setLoading(false);
-  };
+        const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
-  fetchAll();
-}, []);
+        // Extraire IDs auteurs uniques
+        const authorIds: string[] = Array.from(
+          new Set(
+            ticketsJson.recentTickets
+              .map((t: any) => t.author)
+              .filter((id: string) => id && id.trim() !== '')
+          )
+        );
 
+        // Récupérer les noms d’auteur en batch
+        const userNamesMap: Record<string, string> = {};
+
+        await Promise.all(
+          authorIds.map(async (userId) => {
+            try {
+              const resUser = await fetch(
+                `https://ticketing.development.atelier.ovh/api/mobile/users/${userId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (!resUser.ok) throw new Error(`Erreur ${resUser.status}`);
+              const jsonUser = await resUser.json();
+              userNamesMap[userId as string] = jsonUser.user.username || userId;
+            } catch {
+              userNamesMap[userId as string] = userId;
+            }
+          })
+        );
+
+        // Ajouter authorName à chaque ticket
+        const ticketsWithNames = ticketsJson.recentTickets.map((t: any) => ({
+          ...t,
+          authorName: userNamesMap[t.author] || t.author,
+        }));
+
+        // Filtrer tickets ouverts de la semaine
+        const ticketsFiltered = ticketsWithNames.filter(
+          (t: any) =>
+            t.status === 'opened' && new Date(t.created).getTime() >= oneWeekAgo
+        );
+
+        setRecentTickets(ticketsFiltered);
+      } catch (err: any) {
+        setError(err.message);
+      }
+    };
+
+    const fetchAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchStats(), fetchDashboard()]);
+      setLoading(false);
+    };
+
+    fetchAll();
+  }, []);
 
   if (loading) {
     return (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
     );
   }
   if (error) {
     return (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>Erreur : {error}</Text>
-        </View>
+      <View style={styles.center}>
+        <Text style={styles.errorText}>Erreur : {error}</Text>
+      </View>
     );
   }
 
   return (
-      <FlatList
-        data={recentTickets}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.ticketRow}
-        ListHeaderComponent={() => (
-          <>
-            {/* En-tête */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Bienvenue adminatelier</Text>
-              <Text style={styles.subTitle}>LaPlateforme</Text>
-            </View>
-            {/* Bouton création ticket */}
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => router.push('/ticket/createTicket')}
-            >
-              <Text style={styles.createButtonText}>+ Créer un ticket</Text>
-            </TouchableOpacity>
-            {/* Statistiques */}
-            {stats && (
-  <View style={styles.statsRow}>
-    <View style={styles.statCard}>
-      <Text style={styles.statLabel}>Tickets totaux</Text>
-      <Text style={styles.statValue}>{stats.tickets.total}</Text>
-    </View>
-    <View style={styles.statCard}>
-      <Text style={styles.statLabel}>Tickets ouverts</Text>
-      <Text style={styles.statValue}>{stats.tickets.byStatus.opened}</Text>
-    </View>
-    <View style={styles.statCard}>
-      <Text style={styles.statLabel}>Tickets fermés</Text>
-      <Text style={styles.statValue}>{stats.tickets.byStatus.closed}</Text>
-    </View>
-  </View>
-)}
-
-            <Text style={styles.sectionTitle}>Tickets ouverts de la semaine</Text>
-          </>
-        )}
-        renderItem={({ item }) => (
+    <FlatList
+      data={recentTickets}
+      keyExtractor={(item) => item.id}
+      numColumns={2}
+      columnWrapperStyle={styles.ticketRow}
+      ListHeaderComponent={() => (
+        <>
+          <View style={styles.header}>
+            <Text style={styles.title}>Bienvenue adminatelier</Text>
+            <Text style={styles.subTitle}>LaPlateforme</Text>
+          </View>
           <TouchableOpacity
-            style={styles.ticketCard}
-            onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: item.id } })}
+            style={styles.createButton}
+            onPress={() => router.push('/ticket/createTicket')}
           >
-            <Text style={styles.ticketTitle}>{item.title}</Text>
-            <Text style={styles.ticketMeta}>Ticket #{item.id}</Text>
-            <View style={styles.priorityBadge}>
-              <Text style={styles.priorityText}>{item.priority}</Text>
-            </View>
+            <Text style={styles.createButtonText}>+ Créer un ticket</Text>
           </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.container}
-      />
-
+          {stats && (
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Tickets totaux</Text>
+                <Text style={styles.statValue}>{stats.tickets.total}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Tickets ouverts</Text>
+                <Text style={styles.statValue}>{stats.tickets.byStatus.opened}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Tickets fermés</Text>
+                <Text style={styles.statValue}>{stats.tickets.byStatus.closed}</Text>
+              </View>
+            </View>
+          )}
+          <Text style={styles.sectionTitle}>Tickets ouverts de la semaine</Text>
+        </>
+      )}
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          style={styles.ticketCard}
+          onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: item.id } })}
+        >
+          <Text style={styles.ticketTitle}>{item.title}</Text>
+          <Text style={styles.ticketMeta}>By {item.authorName || item.author}</Text>
+          <View style={styles.priorityBadge}>
+            <Text style={styles.priorityText}>{item.priority}</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+      contentContainerStyle={styles.container}
+    />
   );
 }
 
