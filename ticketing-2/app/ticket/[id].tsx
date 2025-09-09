@@ -39,6 +39,8 @@ export default function TicketDetail() {
     };
     if (id) fetchTicket();
   }, [id]);
+          console.log('Reponse API Ticket:', JSON.stringify(ticket, null, 2))
+
 
   const handleAssign = async () => {
     if (!selectedAdmin) {
@@ -250,10 +252,10 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     backgroundColor: '#fff',
-    margin: 1,
+    margin: 0,
     marginBottom: 8,
     padding: 10,
-    borderRadius: 12,
+    //borderRadius: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

@@ -19,7 +19,7 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="index" />
-          <Stack.Screen name="dashboard" />
+          <Stack.Screen name="dashboard"  />
           <Stack.Screen name="ticket/createTicket" />
           <Stack.Screen name="ticket/[id]" />
         </Stack>
@@ -29,8 +29,8 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   container: {
-    flex:           1,
+    flex: 1,
     justifyContent: 'center',
-    padding:        20,
     backgroundColor:'#f9f9f9',
-  },})
+  },
+})

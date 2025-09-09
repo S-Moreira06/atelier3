@@ -53,19 +53,18 @@ export default function CreateTicket() {
       form.append('description', description);
       form.append('project', selectedProject);
       form.append('priority', priority);
-      files.forEach(file => {
-        form.append('files[]', {
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType || 'application/octet-stream',
-        } as any);
-      });
-
+files.forEach(file => {
+  const fileUri = file.uri.startsWith('file://') ? file.uri : 'file://' + file.uri;
+  form.append('files', {
+    uri: fileUri,
+    name: file.name,
+    type: file.mimeType || 'application/octet-stream',
+  } as any);
+});
       const res = await fetch('https://ticketing.development.atelier.ovh/api/mobile/tickets', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
         body: form,
       });
