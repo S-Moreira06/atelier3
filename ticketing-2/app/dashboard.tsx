@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -36,7 +36,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
 
-  useEffect(() => {
+  // Fonction pour récupérer les données
+  const fetchData = useCallback(async () => {
     const fetchStats = async () => {
       try {
         const token = await SecureStore.getItemAsync('userToken');
@@ -66,7 +67,6 @@ export default function Dashboard() {
         if (!resTickets.ok) throw new Error(`Erreur ${resTickets.status}`);
 
         const ticketsJson = await resTickets.json();
-
         const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
         // Extraire IDs auteurs uniques
@@ -78,7 +78,7 @@ export default function Dashboard() {
           )
         );
 
-        // Récupérer les noms d’auteur en batch
+        // Récupérer les noms d'auteur en batch
         const userNamesMap: Record<string, string> = {};
 
         await Promise.all(
@@ -115,14 +115,19 @@ export default function Dashboard() {
       }
     };
 
-    const fetchAll = async () => {
-      setLoading(true);
-      await Promise.all([fetchStats(), fetchDashboard()]);
-      setLoading(false);
-    };
-
-    fetchAll();
+    setLoading(true);
+    setError(null); // Reset l'erreur à chaque nouveau fetch
+    await Promise.all([fetchStats(), fetchDashboard()]);
+    setLoading(false);
   }, []);
+
+  // Utiliser useFocusEffect au lieu de useEffect
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
+
 
   if (loading) {
     return (
