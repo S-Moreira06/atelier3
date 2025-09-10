@@ -35,7 +35,7 @@ export default function LoginScreen() {
       
       if (data.access_token != null && response.ok) {
         await SecureStore.setItemAsync('userToken', data.access_token);
-        router.push('/dashboard');
+        router.replace('/(tabs)/dashboard');
       } else {
         Alert.alert('Erreur de connexion', data.message || 'Vérifiez vos identifiants');
       }

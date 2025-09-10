@@ -95,7 +95,7 @@ export default function EditTicket() {
       }
 
       Alert.alert('Succès', 'Ticket modifié avec succès');
-      router.replace(`/ticket/${id}`);
+      router.replace(`/(ticket)/${id}`);
     } catch (err: any) {
       Alert.alert('Erreur', err.message);
     } finally {

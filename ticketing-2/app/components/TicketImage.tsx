@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type TicketImagesProps = {
   ticketId: string;
@@ -7,7 +7,11 @@ type TicketImagesProps = {
   isComment?: boolean;
 };
 
-export default function TicketImages({ticketId,filesJson,isComment = false,}: TicketImagesProps) {
+export default function TicketImages({
+  ticketId,
+  filesJson,
+  isComment = false,
+}: TicketImagesProps) {
   if (!filesJson) {
     return (
       <View style={styles.emptyContainer}>
@@ -45,14 +49,34 @@ export default function TicketImages({ticketId,filesJson,isComment = false,}: Ti
       showsHorizontalScrollIndicator={false}
       style={styles.scrollContainer}
     >
-      {files.map((filename) => (
-        <Image
-          key={filename}
-          source={{ uri: `${baseURL}${ticketId}/${filename}` }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-      ))}
+      {files.map((filename) => {
+        const uri = `${baseURL}${ticketId}/${filename}`;
+        const ext = filename.split('.').pop()?.toLowerCase();
+
+        if (ext === 'pdf') {
+          return (
+            <TouchableOpacity
+              key={filename}
+              style={styles.pdfContainer}
+              onPress={() => Linking.openURL(uri)}
+            >
+              <Text style={styles.pdfIcon}>📄</Text>
+              <Text style={styles.pdfText} numberOfLines={1}>
+                {filename}
+              </Text>
+            </TouchableOpacity>
+          );
+        }
+
+        return (
+          <Image
+            key={filename}
+            source={{ uri }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        );
+      })}
     </ScrollView>
   );
 }
@@ -75,5 +99,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     fontStyle: 'italic',
+  },
+  pdfContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
+  },
+  pdfIcon: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  pdfText: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#007AFF',
   },
 });

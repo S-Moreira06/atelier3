@@ -158,7 +158,7 @@ export default function Dashboard() {
           </View>
           <TouchableOpacity
             style={styles.createButton}
-            onPress={() => router.push('/ticket/createTicket')}
+            onPress={() => router.push('/(tabs)/(ticket)/createTicket')}
           >
             <Text style={styles.createButtonText}>+ Créer un ticket</Text>
           </TouchableOpacity>
@@ -184,7 +184,7 @@ export default function Dashboard() {
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.ticketCard}
-          onPress={() => router.push({ pathname: '/ticket/[id]', params: { id: item.id } })}
+          onPress={() => router.push({ pathname: '/(tabs)/(ticket)/[id]', params: { id: item.id } })}
         >
           <Text style={styles.ticketTitle}>{item.title}</Text>
           <Text style={styles.ticketMeta}>By {item.authorName || item.author}</Text>

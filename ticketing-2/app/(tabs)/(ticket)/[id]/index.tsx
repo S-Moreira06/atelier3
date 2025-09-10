@@ -14,9 +14,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import ExpandableCard from '../../components/ExpandableCard';
-import TicketImages from '../../components/TicketImage';
-import useUserName from '../../hooks/useUserName';
+import ExpandableCard from '../../../components/ExpandableCard';
+import TicketImages from '../../../components/TicketImage';
+import useUserName from '../../../hooks/useUserName';
 
 export default function TicketDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -288,7 +288,7 @@ export default function TicketDetail() {
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.editIconButton}
-                onPress={() => router.push(`/ticket/${id}/edit`)}
+                onPress={() => router.push(`/(ticket)/${id}/edit`)}
               >
                 <Text style={styles.editIcon}>✏️</Text>
               </TouchableOpacity>
@@ -463,7 +463,7 @@ export default function TicketDetail() {
         <View style={styles.bottomActions}>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => router.push(`/ticket/${id}/edit`)}
+            onPress={() => router.push(`/(ticket)/${id}/edit`)}
           >
             <Text style={styles.editButtonText}>✏️ Modifier le ticket</Text>
           </TouchableOpacity>

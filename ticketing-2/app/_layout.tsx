@@ -19,10 +19,8 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="index" />
-          <Stack.Screen name="dashboard"  />
-          <Stack.Screen name="ticket/createTicket" />
-          <Stack.Screen name="ticket/[id]/index" />
-          <Stack.Screen name="ticket/[id]/edit" />
+          <Stack.Screen name="(tabs)"  />
+          
 
         </Stack>
       </KeyboardAvoidingView>
