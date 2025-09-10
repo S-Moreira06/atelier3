@@ -12,7 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-
+import TicketItem from '../components/TicketItem';
 type Ticket = {
   id: string;
   title: string;
@@ -249,6 +249,7 @@ const resetFilters = () => {
       default: return '#6c757d';
     }
   };
+  
 
   if (loading && tickets.length === 0) {
     return (
@@ -427,8 +428,8 @@ const resetFilters = () => {
           <View>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>Tous les tickets</Text>
-              <Text style={styles.subTitle}>Gérez vos tickets</Text>
+              <Text style={styles.title}>Liste des Tickets</Text>
+
             </View>
 
             {/* Filtres de recherche */}
@@ -510,39 +511,11 @@ const resetFilters = () => {
           </View>
         )}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.ticketCard}
-            onPress={() => router.push({ pathname: '/(tabs)/(ticket)/[id]', params: { id: item.id } })}
-          >
-            <View style={styles.ticketHeader}>
-              <Text style={styles.ticketTitle} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <View style={styles.ticketBadges}>
-                <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
-                  <Text style={styles.badgeText}>{item.priority}</Text>
-                </View>
-              </View>
-            </View>
-            
-            <Text style={styles.ticketMeta}>
-              Par {item.authorName || item.author}
-            </Text>
-            {item.company_name && (
-              <Text style={styles.ticketMeta}>
-                Entreprise : {item.company_name}
-              </Text>
+            <TicketItem
+                ticket={item}
+                getPriorityColor={getPriorityColor}
+            />
             )}
-            {item.project_name && (
-              <Text style={styles.ticketMeta}>
-                Projet : {item.project_name}
-              </Text>
-            )}
-            <Text style={styles.ticketDate}>
-              {new Date(item.created).toLocaleDateString('fr-FR')}
-            </Text>
-          </TouchableOpacity>
-        )}
         contentContainerStyle={styles.container}
         onEndReached={loadMore}
         onEndReachedThreshold={0.1}
