@@ -1,16 +1,18 @@
 import { Picker } from '@react-native-picker/picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import ExpandableCard from '../../components/ExpandableCard';
 import TicketImages from '../../components/TicketImage';
@@ -31,6 +33,15 @@ export default function TicketDetail() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [addCommentModalVisible, setAddCommentModalVisible] = useState(false);
+  const [commentContent, setCommentContent] = useState('');
+  const [addingComment, setAddingComment] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<any>(null);
+
+
+
   useEffect(() => {
     const fetchTicket = async () => {
       setLoading(true);
@@ -44,7 +55,9 @@ export default function TicketDetail() {
         if (!res.ok) throw new Error(`Erreur ${res.status}`);
         const json = await res.json();
         setAdmins(json.admins || []);
+        setComments(json.comments || []);
         setTicket(json);
+        setIsAdmin(json.isAdmin);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -54,7 +67,7 @@ export default function TicketDetail() {
     if (id) fetchTicket();
   }, [id]);
 
-  console.log('Reponse API Ticket:', JSON.stringify(ticket, null, 2))
+  console.log('Reponse API Ticket:', JSON.stringify(ticket,null,2))
 
   // Fonction pour supprimer le ticket
   const deleteTicket = async () => {
@@ -87,6 +100,92 @@ export default function TicketDetail() {
     } finally {
       setDeleting(false);
       setDeleteModalVisible(false);
+    }
+  };
+  // Fonction pour ajouter un commentaire
+  const addComment = async () => {
+    if (!commentContent.trim()) {
+      Alert.alert('Erreur', 'Veuillez saisir un commentaire.');
+      return;
+    }
+
+    setAddingComment(true);
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      
+      const formData = new FormData();
+      formData.append('ticket_id', id);
+      formData.append('content', commentContent);
+      // Ajout du fichier si il existe
+      if (attachedFile) {
+        const fileUri = attachedFile.uri.startsWith('file://') 
+          ? attachedFile.uri 
+          : 'file://' + attachedFile.uri;
+        
+        formData.append('files', {
+          uri: fileUri,
+          name: attachedFile.name,
+          type: attachedFile.mimeType || 'application/octet-stream',
+        } as any);
+      }
+      const res = await fetch(
+        'https://ticketing.development.atelier.ovh/api/mobile/comments',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur ${res.status}`);
+      }
+
+      Alert.alert('Succès', 'Commentaire ajouté avec succès');
+      setCommentContent('');
+      setAddCommentModalVisible(false);
+      
+      // Recharger les données du ticket
+      const ticketRes = await fetch(
+        `https://ticketing.development.atelier.ovh/api/mobile/tickets/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (ticketRes.ok) {
+        const updatedTicket = await ticketRes.json();
+        setTicket(updatedTicket);
+        setComments(updatedTicket.comments || []);
+        setIsAdmin(updatedTicket.isAdmin);
+      }
+    } catch (err: any) {
+      Alert.alert('Erreur', err.message);
+    } finally {
+      setAddingComment(false);
+      setAttachedFile(null);
+    }
+  };
+  // Fonction pour supprimer un commentaire
+  const deleteComment = async (commentId: string) => {
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      const res = await fetch(
+        `https://ticketing.development.atelier.ovh/api/mobile/comments/${commentId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur ${res.status}`);
+      }
+      // Mettre à jour la liste locale sans recharger tout
+      setComments(comments.filter((c) => c.id !== commentId));
+      Alert.alert('Succès', 'Commentaire supprimé');
+    } catch (err: any) {
+      Alert.alert('Erreur', err.message);
     }
   };
 
@@ -298,9 +397,67 @@ export default function TicketDetail() {
         </ExpandableCard>
 
         {/* Commentaires */}
-        <ExpandableCard title="Commentaires">
-          <Text style={styles.emptyState}>Aucun commentaire pour le moment</Text>
-        </ExpandableCard>
+        <View style={styles.card}>
+          <View style={styles.commentsHeader}>
+            <Text style={styles.cardTitle}>Commentaires</Text>
+            <TouchableOpacity
+              style={styles.addCommentIconButton}
+              onPress={() => setAddCommentModalVisible(true)}
+            >
+              <Text style={styles.addCommentIcon}>+</Text>
+            </TouchableOpacity>
+          </View>
+          {comments.length === 0 ? (
+  <Text style={styles.emptyState}>Aucun commentaire pour le moment</Text>
+) : (
+  comments.map((comment) => (
+    <View key={comment.id} style={styles.commentItem}>
+      <View style={styles.commentHeader}>
+        <Text style={styles.commentAuthor}>{comment.username}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.commentDate}>
+            {`${new Date(comment.created).toLocaleDateString('fr-FR')} à ${new Date(comment.created).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`}
+          </Text>
+          {(isAdmin || comment.author === authorId) && (
+            <TouchableOpacity
+              style={styles.deleteCommentButton}
+              onPress={() =>
+                Alert.alert(
+                  'Supprimer le commentaire',
+                  'Confirmer la suppression ?',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Supprimer', onPress: () => deleteComment(comment.id) },
+                  ]
+                )
+              }
+            >
+              <Text style={styles.deleteCommentText}>🗑️</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      <Text style={styles.commentContent}>{comment.content}</Text>
+      {comment.files && comment.files !== "" && (
+        <TicketImages
+          ticketId={comment.id}
+          filesJson={comment.files}
+          isComment={true}
+          // style={{ marginTop: 4 }}
+        />
+      )}
+    </View>
+  ))
+)}
+
+          <TouchableOpacity
+            style={styles.addCommentButton}
+            onPress={() => setAddCommentModalVisible(true)}
+          >
+            <Text style={styles.addCommentButtonText}>Ajouter un commentaire</Text>
+          </TouchableOpacity>
+        </View>
+
 
         {/* Boutons d'action en bas */}
         <View style={styles.bottomActions}>
@@ -352,6 +509,66 @@ export default function TicketDetail() {
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <Text style={styles.confirmDeleteText}>Supprimer</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      {/* Modal d'ajout de commentaire */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={addCommentModalVisible}
+        onRequestClose={() => setAddCommentModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Ajouter un commentaire</Text>
+            
+            <TextInput
+              style={styles.commentInput}
+              placeholder="Saisissez votre commentaire..."
+              value={commentContent}
+              onChangeText={setCommentContent}
+              multiline={true}
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            <TouchableOpacity
+              style={styles.attachFileButton}
+              onPress={async () => {
+                const result = await DocumentPicker.getDocumentAsync({});
+                if (!result.canceled && result.assets) {
+                  setAttachedFile(result.assets[0]); // Prendre le premier fichier
+                }
+              }}
+            >
+
+              <Text style={styles.attachFileButtonText}>
+                {attachedFile ? `Fichier sélectionné : ${attachedFile.name}` : 'Joindre un fichier'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  setAddCommentModalVisible(false);
+                  setCommentContent('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmAddButton, addingComment && styles.confirmAddButtonDisabled]}
+                onPress={addComment}
+                disabled={addingComment}
+              >
+                {addingComment ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.confirmAddText}>Ajouter</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -627,5 +844,112 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  
+    // Nouveaux styles pour les commentaires
+  commentsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  addCommentIconButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#e3f2fd',
+    minWidth: 36,
+    alignItems: 'center',
+  },
+  addCommentIcon: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  addCommentButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  addCommentButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  // Styles pour la modale d'ajout de commentaire
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,
+    width: '100%',
+    marginBottom: 24,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  confirmAddButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 100,
+  },
+  confirmAddButtonDisabled: {
+    opacity: 0.6,
+  },
+  confirmAddText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  commentItem: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentAuthor: {
+    fontWeight: 'bold',
+    color: '#333',
+    fontSize: 14,
+  },
+  commentDate: {
+    color: '#666',
+    fontSize: 12,
+  },
+  commentContent: {
+    color: '#333',
+    fontSize: 16,
+    lineHeight: 20,
+  },
+    deleteCommentButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  deleteCommentText: {
+    fontSize: 16,
+    color: '#FF3B30',
+  },
+  attachFileButton: {
+    backgroundColor: '#eee',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  attachFileButtonText: {
+    color: '#555',
+    fontWeight: '600',
+  },
+
+
+
 });

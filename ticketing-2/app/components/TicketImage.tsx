@@ -4,9 +4,10 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 type TicketImagesProps = {
   ticketId: string;
   filesJson: string | null;
+  isComment?: boolean;
 };
 
-export default function TicketImages({ ticketId, filesJson }: TicketImagesProps) {
+export default function TicketImages({ticketId,filesJson,isComment = false,}: TicketImagesProps) {
   if (!filesJson) {
     return (
       <View style={styles.emptyContainer}>
@@ -34,7 +35,9 @@ export default function TicketImages({ ticketId, filesJson }: TicketImagesProps)
     );
   }
 
-  const baseURL = 'https://ticketing.development.atelier.ovh/api/files/tickets/';
+  const baseURL = isComment
+    ? 'https://ticketing.development.atelier.ovh/api/files/comments/'
+    : 'https://ticketing.development.atelier.ovh/api/files/tickets/';
 
   return (
     <ScrollView

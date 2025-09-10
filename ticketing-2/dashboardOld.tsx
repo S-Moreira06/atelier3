@@ -67,49 +67,58 @@ export default function Dashboard() {
         if (!resTickets.ok) throw new Error(`Erreur ${resTickets.status}`);
 
         const ticketsJson = await resTickets.json();
-        const oneWeekAgo = Date.now() - 800 * 24 * 60 * 60 * 1000;
+        const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
-        // Extraire IDs auteurs uniques
-        const authorIds: string[] = Array.from(
-          new Set(
-            ticketsJson.recentTickets
-              .map((t: any) => t.author)
-              .filter((id: string) => id && id.trim() !== '')
-          )
-        );
+       // --- DÉBUT DU BLOC MODIFIÉ ---
 
-        // Récupérer les noms d'auteur en batch
-        const userNamesMap: Record<string, string> = {};
+      // S'assurer que recentTickets est toujours un tableau
+      const recentTicketsArray: any[] = Array.isArray(ticketsJson.recentTickets)
+        ? ticketsJson.recentTickets
+        : [];
 
-        await Promise.all(
-          authorIds.map(async (userId) => {
-            try {
-              const resUser = await fetch(
-                `https://ticketing.development.atelier.ovh/api/mobile/users/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              if (!resUser.ok) throw new Error(`Erreur ${resUser.status}`);
-              const jsonUser = await resUser.json();
-              userNamesMap[userId as string] = jsonUser.user.username || userId;
-            } catch {
-              userNamesMap[userId as string] = userId;
-            }
-          })
-        );
+      // Extraire IDs auteurs uniques
+      const authorIds: string[] = Array.from(
+        new Set(
+          recentTicketsArray
+            .map((t: any) => t.author)
+            .filter((id: string) => id && id.trim() !== '')
+        )
+      );
 
-        // Ajouter authorName à chaque ticket
-        const ticketsWithNames = ticketsJson.recentTickets.map((t: any) => ({
-          ...t,
-          authorName: userNamesMap[t.author] || t.author,
-        }));
+      // Récupérer les noms d'auteur en batch
+      const userNamesMap: Record<string, string> = {};
+      await Promise.all(
+        authorIds.map(async (userId) => {
+          try {
+            const resUser = await fetch(
+              `https://ticketing.development.atelier.ovh/api/mobile/users/${userId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!resUser.ok) throw new Error(`Erreur ${resUser.status}`);
+            const jsonUser = await resUser.json();
+            userNamesMap[userId] = jsonUser.user.username || userId;
+          } catch {
+            userNamesMap[userId] = userId;
+          }
+        })
+      );
 
-        // Filtrer tickets ouverts de la semaine
-        const ticketsFiltered = ticketsWithNames.filter(
-          (t: any) =>
-            t.status === 'opened' && new Date(t.created).getTime() >= oneWeekAgo
-        );
+      // Ajouter authorName à chaque ticket
+      const ticketsWithNames = recentTicketsArray.map((t: any) => ({
+        ...t,
+        authorName: userNamesMap[t.author] || t.author,
+      }));
 
-        setRecentTickets(ticketsFiltered);
+      // Filtrer tickets ouverts de la semaine
+      const ticketsFiltered = ticketsWithNames.filter(
+        (t: any) =>
+          t.status === 'opened' && new Date(t.created).getTime() >= oneWeekAgo
+      );
+
+      setRecentTickets(ticketsFiltered);
+
+      // --- FIN DU BLOC MODIFIÉ ---
+
       } catch (err: any) {
         setError(err.message);
       }
