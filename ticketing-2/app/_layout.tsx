@@ -5,26 +5,29 @@ import {
   StyleSheet
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
+import AuthProvider from './context/AuthContext';
 
 export default function RootLayout() {
   return (
-    <SafeAreaView style={{flex:1, backgroundColor: '#000'}}>
-      <KeyboardAvoidingView // permet au contenu de s'adapter si ouverture du clavier
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
-        <Stack
-          screenOptions={{
-          headerShown: false, // On masque le header par défaut
-          }}
+    <AuthProvider>
+      <SafeAreaView style={{flex:1, backgroundColor: '#000'}}>
+        <KeyboardAvoidingView // permet au contenu de s'adapter si ouverture du clavier
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
         >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)"  />
-          
+          <Stack
+            screenOptions={{
+            headerShown: false, // On masque le header par défaut
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)"  />
+            
 
-        </Stack>
-      </KeyboardAvoidingView>
-    </SafeAreaView>);
+          </Stack>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </AuthProvider>);
 }
 
 const styles = StyleSheet.create({
