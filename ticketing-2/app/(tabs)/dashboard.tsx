@@ -162,22 +162,53 @@ export default function Dashboard() {
           >
             <Text style={styles.createButtonText}>+ Créer un ticket</Text>
           </TouchableOpacity>
+          {/* Statistiques globales */}
           {stats && (
             <View style={styles.statsRow}>
-              <View style={styles.statCard}>
+              {/* Tickets totaux */}
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => {
+                  router.push({
+                    pathname: '/ticketsList',
+                    params: { status: undefined },
+                  });
+                }}
+              >
                 <Text style={styles.statLabel}>Tickets totaux</Text>
                 <Text style={styles.statValue}>{stats.tickets.total}</Text>
-              </View>
-              <View style={styles.statCard}>
+              </TouchableOpacity>
+
+              {/* Tickets ouverts */}
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => {
+                  router.push({
+                    pathname: '/ticketsList',
+                    params: { status: 'opened' },
+                  });
+                }}
+              >
                 <Text style={styles.statLabel}>Tickets ouverts</Text>
                 <Text style={styles.statValue}>{stats.tickets.byStatus.opened}</Text>
-              </View>
-              <View style={styles.statCard}>
+              </TouchableOpacity>
+
+              {/* Tickets fermés */}
+              <TouchableOpacity
+                style={styles.statCard}
+                onPress={() => {
+                  router.push({
+                    pathname: '/ticketsList',
+                    params: { status: 'closed' },
+                  });
+                }}
+              >
                 <Text style={styles.statLabel}>Tickets fermés</Text>
                 <Text style={styles.statValue}>{stats.tickets.byStatus.closed}</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           )}
+
           <Text style={styles.sectionTitle}>Tickets ouverts de la semaine</Text>
         </>
       )}

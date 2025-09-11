@@ -2,15 +2,15 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import TicketItem from '../components/TicketItem';
 type Ticket = {
@@ -40,6 +40,7 @@ export default function Tickets() {
   const [searchText, setSearchText] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [priorityFilters, setPriorityFilters] = useState<string[]>([]); // ✅ NOUVEAU : Array des priorités sélectionnées
+  const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('created');
   const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
 
@@ -149,6 +150,7 @@ const toggleAllPriorities = () => {
 
       if (searchText.trim()) params.append('search', searchText.trim());
       if (companyFilter.trim()) params.append('company', companyFilter.trim());
+      if (statusFilter) params.append('status', statusFilter);
       
       // ✅ NOUVEAU : Envoyer les priorités sélectionnées
     //   if (priorityFilters.length > 0) {
@@ -181,7 +183,7 @@ const toggleAllPriorities = () => {
     } catch (err: any) {
       setError(err.message);
     }
-  }, [searchText, companyFilter, priorityFilters, sortBy, sortOrder]); // ✅ Ajouté priorityFilters
+  }, [searchText, companyFilter, priorityFilters, statusFilter, sortBy, sortOrder]); // ✅ Ajouté priorityFilters
 
   // Recharger quand les filtres changent
   const applyFilters = useCallback(() => {
@@ -234,6 +236,7 @@ useFocusEffect(
 const resetFilters = () => {
   setSearchText('');
   setCompanyFilter('');
+  setStatusFilter('');
   setPriorityFilters([...availablePriorities]); // Reset avec toutes les priorités
   setSortBy('created');
   setSortOrder('DESC');
@@ -249,7 +252,14 @@ const resetFilters = () => {
       default: return '#6c757d';
     }
   };
-  
+  const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'opened':      return '#28a745';
+    case 'in progress': return '#007bff';
+    case 'closed':      return '#6c757d';
+    default:            return '#ffc107';
+  }
+};
 
   if (loading && tickets.length === 0) {
     return (
@@ -472,11 +482,31 @@ const resetFilters = () => {
                 </Text>
                 <Text style={styles.dropdownArrow}>▼</Text>
               </TouchableOpacity>
+              {/* Filtrage par statut */}
+              <View style={styles.statusFilterContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {['', 'opened', 'closed'].map((status) => (
+                    <TouchableOpacity
+                      key={status}
+                      style={[
+                        styles.statusFilterButton,
+                        statusFilter === status && styles.activeFilterButton
+                      ]}
+                      onPress={() => setStatusFilter(status)}
+                    >
+                      <Text style={[
+                        styles.filterButtonText,
+                        statusFilter === status && styles.activeFilterText
+                      ]}>
+                        {status === '' ? 'Tous' : status === 'opened' ? 'Ouverts' : 'Fermés'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
 
               <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
-                  <Text style={styles.applyButtonText}>Appliquer</Text>
-                </TouchableOpacity>
+                
                 <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
                   <Text style={styles.resetButtonText}>Reset</Text>
                 </TouchableOpacity>
@@ -514,6 +544,7 @@ const resetFilters = () => {
             <TicketItem
                 ticket={item}
                 getPriorityColor={getPriorityColor}
+                getStatusColor={getStatusColor}
             />
             )}
         contentContainerStyle={styles.container}
@@ -817,4 +848,30 @@ separator: {
   backgroundColor: '#dee2e6',
   marginVertical: 4,
 },
+ // Conteneur du filtre de statut
+  statusFilterContainer: {
+    marginBottom: 12,
+  },
+  // Bouton de filtre de statut
+  statusFilterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginRight: 8,
+  },
+  // Bouton actif de filtre de statut
+  activeFilterButton: {
+    backgroundColor: '#007AFF',
+  },
+  // Texte des boutons de filtre
+  filterButtonText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  // Texte des boutons de filtre actifs
+  activeFilterText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 });

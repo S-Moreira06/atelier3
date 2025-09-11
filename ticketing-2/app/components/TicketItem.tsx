@@ -17,9 +17,10 @@ type Ticket = {
 type Props = {
   ticket: Ticket;
   getPriorityColor: (p: string) => string;
+  getStatusColor: (s: string) => string;
 };
 
-export default function TicketItem({ ticket,  getPriorityColor }: Props) {
+export default function TicketItem({ ticket,  getPriorityColor, getStatusColor  }: Props) {
   const router = useRouter();
   const authorName = useUserName(ticket.author);
 
@@ -33,6 +34,9 @@ export default function TicketItem({ ticket,  getPriorityColor }: Props) {
           {ticket.title}
         </Text>
         <View style={styles.ticketBadges}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
+            <Text style={styles.badgeText}>{ticket.status}</Text>
+          </View>
           <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(ticket.priority) }]}>
             <Text style={styles.badgeText}>{ticket.priority}</Text>
           </View>
@@ -98,4 +102,11 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
+    statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 4,
+  },
+
 });
