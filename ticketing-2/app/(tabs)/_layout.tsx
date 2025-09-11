@@ -1,9 +1,37 @@
 import { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Alert, StyleSheet, Text } from 'react-native';
 
 export default function TabLayout() {
+  const router = useRouter();
+
+  // ✅ NOUVELLE FONCTION : Gérer la déconnexion
+  const handleLogout = async () => {
+    Alert.alert(
+      'Déconnexion',
+      'Êtes-vous sûr de vouloir vous déconnecter ?',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Se déconnecter',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await SecureStore.deleteItemAsync('userToken');// Supprimer le token
+              router.replace('/');// Rediriger vers la page de connexion
+            } catch (error) {
+              console.error('Erreur lors de la déconnexion:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
   // 1. Définir un objet JS pour les screenOptions, typé
   const screenOptions: BottomTabNavigationOptions = {
     headerShown: false,
@@ -35,6 +63,24 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <Text style={[styles.iconNav, { color }]}>🎫</Text>
           ),
+        }}
+      />
+       {/* ✅ NOUVEL ONGLET : Déconnexion */}
+      <Tabs.Screen
+        name="logout"
+        options={{
+          title: 'Déconnexion',
+          tabBarIcon: ({ color }) => (
+            <Text style={[styles.iconNav, { color }]}>🚪</Text>
+          ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            // Empêcher la navigation par défaut
+            e.preventDefault();
+            // Déclencher la déconnexion
+            handleLogout();
+          },
         }}
       />
       {/* Masquer les routes ticket */}
