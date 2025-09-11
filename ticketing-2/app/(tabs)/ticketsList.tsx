@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { useCallback, useState } from 'react';
 import {
@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import TicketItem from '../components/TicketItem';
+
 type Ticket = {
   id: string;
   title: string;
@@ -30,6 +31,8 @@ type SortOrder = 'ASC' | 'DESC';
 
 export default function Tickets() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+status?: string;}>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -40,17 +43,25 @@ export default function Tickets() {
   const [searchText, setSearchText] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [priorityFilters, setPriorityFilters] = useState<string[]>([]); // ✅ NOUVEAU : Array des priorités sélectionnées
-  const [statusFilter, setStatusFilter] = useState('');
+  const { status: initialStatus} = useLocalSearchParams<{ status?: string}>();
+  const [statusFilter, setStatusFilter] = useState(initialStatus || '');
   const [sortBy, setSortBy] = useState<SortOption>('created');
   const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
-
   // États pour les dropdowns
   const [availableCompanies, setAvailableCompanies] = useState<string[]>([]);
   const [availablePriorities, setAvailablePriorities] = useState<string[]>([]); // ✅ NOUVEAU
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false); // ✅ NOUVEAU
 
+useFocusEffect(
+  useCallback(() => {
+    // Synchroniser les états avec les query params
+    setStatusFilter(params.status ?? '');
 
+    // Lancer le fetch avec les nouveaux filtres
+    fetchTickets(1, true);
+  }, [params.status])
+);
 // ✅ NOUVELLE FONCTION : Charger toutes les priorités disponibles (une seule fois)
 const loadAllAvailableData = useCallback(async () => {
   try {

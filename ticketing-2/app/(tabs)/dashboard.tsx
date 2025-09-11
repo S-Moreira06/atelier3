@@ -169,7 +169,7 @@ export default function Dashboard() {
               <TouchableOpacity
                 style={styles.statCard}
                 onPress={() => {
-                  router.push({
+                  router.replace({
                     pathname: '/ticketsList',
                     params: { status: undefined },
                   });
@@ -183,7 +183,7 @@ export default function Dashboard() {
               <TouchableOpacity
                 style={styles.statCard}
                 onPress={() => {
-                  router.push({
+                  router.replace({
                     pathname: '/ticketsList',
                     params: { status: 'opened' },
                   });
@@ -197,7 +197,7 @@ export default function Dashboard() {
               <TouchableOpacity
                 style={styles.statCard}
                 onPress={() => {
-                  router.push({
+                  router.replace({
                     pathname: '/ticketsList',
                     params: { status: 'closed' },
                   });
