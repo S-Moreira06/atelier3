@@ -1,3 +1,7 @@
+import ExpandableCard from '@/app/components/ExpandableCard';
+import TicketImages from '@/app/components/TicketImage';
+import useAuth from '@/app/hooks/useAuth';
+import useUserName from '@/app/hooks/useUserName';
 import { Picker } from '@react-native-picker/picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,13 +18,13 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import ExpandableCard from '../../../components/ExpandableCard';
-import TicketImages from '../../../components/TicketImage';
-import useUserName from '../../../hooks/useUserName';
+
 
 export default function TicketDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
+  console.log("INFORMATIONS DE L'USER:" , user);
   
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState<any>(null);
@@ -37,7 +41,7 @@ export default function TicketDetail() {
   const [commentContent, setCommentContent] = useState('');
   const [addingComment, setAddingComment] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(user?.admin || false);
   const [attachedFile, setAttachedFile] = useState<any>(null);
 
 
@@ -285,6 +289,7 @@ export default function TicketDetail() {
               <Text style={styles.title}>{ticket.ticket.title}</Text>
               <Text style={styles.ticketId}>Ticket #{ticket.ticket.id}</Text>
             </View>
+            {(isAdmin || ticket.author === user?.id) && (
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.editIconButton}
@@ -298,7 +303,7 @@ export default function TicketDetail() {
               >
                 <Text style={styles.deleteIcon}>🗑️</Text>
               </TouchableOpacity>
-            </View>
+            </View>)}
           </View>
         </View>
 
@@ -359,6 +364,7 @@ export default function TicketDetail() {
             </Text>
           </View>
 
+          {isAdmin  && (
           <View style={styles.assignmentControls}>
             <Text style={styles.label}>Assigner un administrateur</Text>
             <View style={styles.pickerContainer}>
@@ -385,7 +391,7 @@ export default function TicketDetail() {
                 {assigning ? 'Assignation...' : "Gérer l'assignation"}
               </Text>
             </TouchableOpacity>
-          </View>
+          </View>)}
         </ExpandableCard>
 
         {/* Ressources */}
@@ -418,7 +424,7 @@ export default function TicketDetail() {
           <Text style={styles.commentDate}>
             {`${new Date(comment.created).toLocaleDateString('fr-FR')} à ${new Date(comment.created).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`}
           </Text>
-          {(isAdmin || comment.author === authorId) && (
+          {(isAdmin || comment.author === user?.id) && (
             <TouchableOpacity
               style={styles.deleteCommentButton}
               onPress={() =>
@@ -460,6 +466,7 @@ export default function TicketDetail() {
 
 
         {/* Boutons d'action en bas */}
+        {(isAdmin || ticket.author === user?.id) && (
         <View style={styles.bottomActions}>
           <TouchableOpacity
             style={styles.editButton}
@@ -474,7 +481,7 @@ export default function TicketDetail() {
           >
             <Text style={styles.deleteButtonText}>🗑️ Supprimer le ticket</Text>
           </TouchableOpacity>
-        </View>
+        </View>)}
       </ScrollView>
 
       {/* Modal de confirmation */}
