@@ -1,11 +1,28 @@
 import { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import { Tabs, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import React from 'react';
-import { Alert, StyleSheet, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import useAuth from '../hooks/useAuth';
 
 export default function TabLayout() {
   const router = useRouter();
+  const { token, loading, signOut } = useAuth();
+
+  // Redirection si non authentifié
+  useEffect(() => {
+    if (!loading && !token) {
+      router.replace('/');
+    }
+  }, [loading, token]);
+
+  // Affiche un loader tant que l’état de chargement est en cours
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   // ✅ NOUVELLE FONCTION : Gérer la déconnexion
   const handleLogout = async () => {
@@ -20,18 +37,15 @@ export default function TabLayout() {
         {
           text: 'Se déconnecter',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await SecureStore.deleteItemAsync('userToken');// Supprimer le token
-              router.replace('/');// Rediriger vers la page de connexion
-            } catch (error) {
-              console.error('Erreur lors de la déconnexion:', error);
-            }
+                    onPress: async () => {
+            await signOut();
+            router.replace('/');
           },
         },
       ]
     );
   };
+
   // 1. Définir un objet JS pour les screenOptions, typé
   const screenOptions: BottomTabNavigationOptions = {
     headerShown: false,

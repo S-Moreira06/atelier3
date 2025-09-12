@@ -9,6 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import DebugAuth from '../components/DebugAuth';
+import useAuth from '../hooks/useAuth';
+
 
 type Ticket = {
   id: string;
@@ -31,6 +34,7 @@ type Stats = {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -153,15 +157,25 @@ export default function Dashboard() {
       ListHeaderComponent={() => (
         <>
           <View style={styles.header}>
-            <Text style={styles.title}>Bienvenue adminatelier</Text>
+            <Text style={styles.title}>{`Bienvenue ${user?.username || 'Invité'}`}</Text>
             <Text style={styles.subTitle}>LaPlateforme</Text>
           </View>
+          <DebugAuth/>
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => router.push('/(tabs)/(ticket)/createTicket')}
           >
             <Text style={styles.createButtonText}>+ Créer un ticket</Text>
           </TouchableOpacity>
+                {/* Bouton “Stats avancées” : réservé aux admins */}
+      {user?.admin && (
+        <TouchableOpacity
+          style={[styles.createButton, { backgroundColor: '#6c757d' }]}
+          onPress={() => router.push('/(tabs)/adminStats')}
+        >
+          <Text style={styles.createButtonText}>Stats Admin</Text>
+        </TouchableOpacity>
+      )}
           {/* Statistiques globales */}
           {stats && (
             <View style={styles.statsRow}>

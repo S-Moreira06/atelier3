@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,12 +9,14 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { AuthContext, User } from './context/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [identity, setIdentity] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { signIn } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!identity || !password) {
@@ -34,7 +35,16 @@ export default function LoginScreen() {
       console.log("reponse:",response.ok);
       
       if (data.access_token != null && response.ok) {
-        await SecureStore.setItemAsync('userToken', data.access_token);
+        // Stockage via le contexte
+        const userInfo: User = {
+          id: data.user.id,
+          username: data.user.username,
+          email: data.user.email,
+          company: data.user.company,
+          admin: data.user.admin,
+          admin_level: data.user.admin_level,
+        };
+        await signIn(data.access_token, userInfo);
         router.replace('/(tabs)/dashboard');
       } else {
         Alert.alert('Erreur de connexion', data.message || 'Vérifiez vos identifiants');

@@ -37,6 +37,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       const savedToken = await SecureStore.getItemAsync('userToken');
       const savedUser = await SecureStore.getItemAsync('userInfo');
+      console.log('[AuthContext] Chargement initial – token:', savedToken);
+      console.log('[AuthContext] Chargement initial – user:', savedUser);
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
@@ -48,6 +50,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (newToken: string, newUser: User) => {
     await SecureStore.setItemAsync('userToken', newToken);
     await SecureStore.setItemAsync('userInfo', JSON.stringify(newUser));
+    console.log('[AuthContext] signIn / token enregistré:', newToken);
+  console.log('[AuthContext] signIn / user enregistré:', newUser);
     setToken(newToken);
     setUser(newUser);
   };
@@ -55,6 +59,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await SecureStore.deleteItemAsync('userToken');
     await SecureStore.deleteItemAsync('userInfo');
+    
     setToken(null);
     setUser(null);
   };
