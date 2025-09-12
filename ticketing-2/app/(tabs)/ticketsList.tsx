@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import TicketItem from '../components/TicketItem';
+import useAuth from '../hooks/useAuth';
 
 type Ticket = {
   id: string;
@@ -31,6 +32,7 @@ type SortOrder = 'ASC' | 'DESC';
 
 export default function Tickets() {
   const router = useRouter();
+  const { user } = useAuth();
   const params = useLocalSearchParams<{
 status?: string;}>();
   const [loading, setLoading] = useState(true);
@@ -160,14 +162,14 @@ const toggleAllPriorities = () => {
       });
 
       if (searchText.trim()) params.append('search', searchText.trim());
-      if (companyFilter.trim()) params.append('company', companyFilter.trim());
+      // Filtrage automatique par entreprise pour les users
+      if (!user?.admin && user?.company) {
+        params.append('company', user.company);
+      } else if (user?.admin && companyFilter.trim()) {
+        params.append('company', companyFilter.trim());
+      }
+
       if (statusFilter) params.append('status', statusFilter);
-      
-      // ✅ NOUVEAU : Envoyer les priorités sélectionnées
-    //   if (priorityFilters.length > 0) {
-    //     // Supposons que l'API accepte multiple priority parameters ou une liste séparée par virgules
-    //     priorityFilters.forEach(priority => params.append('priority', priority));
-    //   }
 
       const response = await fetch(
         `https://ticketing.development.atelier.ovh/api/mobile/tickets?${params.toString()}`,
@@ -194,7 +196,7 @@ const toggleAllPriorities = () => {
     } catch (err: any) {
       setError(err.message);
     }
-  }, [searchText, companyFilter, priorityFilters, statusFilter, sortBy, sortOrder]); // ✅ Ajouté priorityFilters
+  }, [searchText, companyFilter, priorityFilters, statusFilter, sortBy, sortOrder, user]); // ✅ Ajouté priorityFilters
 
   // Recharger quand les filtres changent
   const applyFilters = useCallback(() => {
@@ -350,48 +352,45 @@ const resetFilters = () => {
         </TouchableOpacity>
       </Modal>
 
-{/* ✅ MODAL AVEC CALCUL DYNAMIQUE */}
-<Modal
-  visible={showPriorityDropdown}
-  transparent
-  animationType="fade"
-  onRequestClose={() => setShowPriorityDropdown(false)}
->
-  <TouchableOpacity 
-    style={styles.modalOverlay}
-    activeOpacity={1}
-    onPress={() => setShowPriorityDropdown(false)}
-  >
-    <View style={styles.dropdownContainer}>
-      <Text style={styles.dropdownTitle}>Choisir les priorités</Text>
-
-      <ScrollView style={styles.dropdownScroll}>
-        {/* ✅ CASE "Tout sélectionné" avec calcul dynamique */}
-        <TouchableOpacity
-          style={[styles.checkboxItem, styles.selectAllItem]}
-          onPress={toggleAllPriorities}
+      {/* ✅ MODAL AVEC CALCUL DYNAMIQUE */}
+      <Modal
+        visible={showPriorityDropdown}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPriorityDropdown(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPriorityDropdown(false)}
         >
-          <View style={styles.checkboxRow}>
-            <View style={[
-              styles.checkbox,
-              (priorityFilters.length === availablePriorities.length) && styles.checkedCheckbox
-            ]}>
-              {(priorityFilters.length === availablePriorities.length) && (
-                <Text style={styles.checkmark}>✓</Text>
-              )}
-            </View>
-            <Text style={[
-              styles.dropdownText,
-              styles.selectAllText,
-              (priorityFilters.length === availablePriorities.length) && styles.selectedDropdownText
-            ]}>
-              Tout sélectionné
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.separator} />
-
+        <View style={styles.dropdownContainer}>
+          <Text style={styles.dropdownTitle}>Choisir les priorités</Text>
+          <ScrollView style={styles.dropdownScroll}>
+            {/* ✅ CASE "Tout sélectionné" avec calcul dynamique */}
+            <TouchableOpacity
+              style={[styles.checkboxItem, styles.selectAllItem]}
+              onPress={toggleAllPriorities}
+            >
+              <View style={styles.checkboxRow}>
+                <View style={[
+                  styles.checkbox,
+                  (priorityFilters.length === availablePriorities.length) && styles.checkedCheckbox
+                ]}>
+                  {(priorityFilters.length === availablePriorities.length) && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+                <Text style={[
+                  styles.dropdownText,
+                  styles.selectAllText,
+                  (priorityFilters.length === availablePriorities.length) && styles.selectedDropdownText
+                ]}>
+                  Tout sélectionné
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <View style={styles.separator} />
         {availablePriorities.map((priority) => (
           <TouchableOpacity
             key={priority}
@@ -438,9 +437,7 @@ const resetFilters = () => {
       </View>
     </View>
   </TouchableOpacity>
-</Modal>
-
-
+      </Modal>
 
       <FlatList
         data={tickets}
@@ -463,36 +460,34 @@ const resetFilters = () => {
                 onSubmitEditing={applyFilters}
               />
               
-              {/* Dropdown pour les entreprises */}
-              <TouchableOpacity
-                style={styles.dropdownButton}
-                onPress={() => setShowCompanyDropdown(true)}
-              >
-                <Text style={[
-                  styles.dropdownButtonText,
-                  !companyFilter && styles.placeholderText
-                ]}>
-                  {companyFilter || 'Choisir une entreprise...'}
-                </Text>
-                <Text style={styles.dropdownArrow}>▼</Text>
-              </TouchableOpacity>
+              {/* Dropdown pour les entreprises - ADMINS UNIQUEMENT */}
+              {user?.admin && (
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setShowCompanyDropdown(true)}
+                >
+                  <Text style={[styles.dropdownButtonText, !companyFilter && styles.placeholderText]}>
+                    {companyFilter || 'Choisir une entreprise...'}
+                  </Text>
+                  <Text style={styles.dropdownArrow}>▼</Text>
+                </TouchableOpacity>
+              )}
 
-              {/* ✅ NOUVEAU : Dropdown pour les priorités */}
-              <TouchableOpacity
-                style={styles.dropdownButton}
-                onPress={() => setShowPriorityDropdown(true)}
-              >
-                <Text style={[
-                  styles.dropdownButtonText,
-                  priorityFilters.length === 0 && styles.placeholderText
-                ]}>
-                  {priorityFilters.length === 0 
-                    ? 'Choisir les priorités...' 
-                    : `${priorityFilters.length} priorité(s) sélectionnée(s)`
-                  }
-                </Text>
-                <Text style={styles.dropdownArrow}>▼</Text>
-              </TouchableOpacity>
+              {/* Dropdown pour les priorités - ADMINS UNIQUEMENT */}
+              {user?.admin && (
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setShowPriorityDropdown(true)}
+                >
+                  <Text style={[styles.dropdownButtonText, priorityFilters.length === 0 && styles.placeholderText]}>
+                    {priorityFilters.length === 0
+                      ? 'Choisir les priorités...'
+                      : `${priorityFilters.length} priorité(s) sélectionnée(s)`
+                    }
+                  </Text>
+                  <Text style={styles.dropdownArrow}>▼</Text>
+                </TouchableOpacity>
+              )}
               {/* Filtrage par statut */}
               <View style={styles.statusFilterContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
