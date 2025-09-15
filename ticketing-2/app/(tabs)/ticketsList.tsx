@@ -546,6 +546,8 @@ const resetFilters = () => {
             </View>
           </View>
         )}
+
+        // {/* Affichage des tickets */}
         renderItem={({ item }) => (
             <TicketItem
                 ticket={item}

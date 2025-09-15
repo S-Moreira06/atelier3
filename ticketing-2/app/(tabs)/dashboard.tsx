@@ -31,7 +31,10 @@ type Stats = {
     total: number;
   };
 };
-
+type DashboardUserResponse = {
+  recentTickets: Ticket[];
+  projects: any[];
+};
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
@@ -39,98 +42,133 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentTickets, setRecentTickets] = useState<Ticket[]>([]);
-
+  
   // Fonction pour récupérer les données
   const fetchData = useCallback(async () => {
-    const fetchStats = async () => {
-      try {
-        const token = await SecureStore.getItemAsync('userToken');
-        if (!token) throw new Error('Token manquant');
+  setLoading(true);
+  setError(null);
 
-        const resStats = await fetch(
-          'https://ticketing.development.atelier.ovh/api/mobile/dashboard/stats',
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!resStats.ok) throw new Error(`Erreur ${resStats.status}`);
-        const statsJson = await resStats.json();
-        setStats(statsJson);
-      } catch (err: any) {
-        setError(err.message);
-      }
+  try {
+    // Récupération unique du token
+    const token = await SecureStore.getItemAsync('userToken');
+    if (!token) throw new Error('Token manquant');
+
+    // Sous-fonction pour les stats admin
+    const fetchStats = async (token: string) => {
+      const resStats = await fetch(
+        'https://ticketing.development.atelier.ovh/api/mobile/dashboard/stats',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!resStats.ok) throw new Error(`Erreur ${resStats.status}`);
+      const statsJson = await resStats.json();
+      setStats(statsJson);
     };
 
-    const fetchDashboard = async () => {
-      try {
-        const token = await SecureStore.getItemAsync('userToken');
-        if (!token) throw new Error('Token manquant');
+    // Sous-fonction pour le dashboard admin
+    const fetchDashboard = async (token: string) => {
+      const resTickets = await fetch(
+        'https://ticketing.development.atelier.ovh/api/mobile/dashboard',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!resTickets.ok) throw new Error(`Erreur ${resTickets.status}`);
+      const ticketsJson = await resTickets.json();
 
-        const resTickets = await fetch(
-          'https://ticketing.development.atelier.ovh/api/mobile/dashboard',
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!resTickets.ok) throw new Error(`Erreur ${resTickets.status}`);
+      // Calcul de la date il y a 7 jours (7 jours = 7*24*60*60*1000 ms)
+      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
-        const ticketsJson = await resTickets.json();
-        const oneWeekAgo = Date.now() - 800 * 24 * 60 * 60 * 1000;
+      // Extraction et récupération batch des noms d’auteurs
+      const authorIds: string[] = Array.from(
+        new Set(
+          (ticketsJson.recentTickets as any[])
+            .map((t: any) => String(t.author))
+            .filter((id: string) => id.trim())
+        )
+      );
 
-        // Extraire IDs auteurs uniques
-        const authorIds: string[] = Array.from(
-          new Set(
-            ticketsJson.recentTickets
-              .map((t: any) => t.author)
-              .filter((id: string) => id && id.trim() !== '')
-          )
-        );
 
-        // Récupérer les noms d'auteur en batch
-        const userNamesMap: Record<string, string> = {};
+      const userNamesMap: Record<string, string> = {};
+      await Promise.all(
+        authorIds.map(async (userId: string) => {
+          try {
+            const resUser = await fetch(
+              `https://ticketing.development.atelier.ovh/api/mobile/users/${userId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!resUser.ok) throw new Error();
+            const { user } = await resUser.json();
+            userNamesMap[userId] = user.username || userId;
+          } catch {
+            userNamesMap[userId] = userId;
+          }
+        })
+      );
 
-        await Promise.all(
-          authorIds.map(async (userId) => {
-            try {
-              const resUser = await fetch(
-                `https://ticketing.development.atelier.ovh/api/mobile/users/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              if (!resUser.ok) throw new Error(`Erreur ${resUser.status}`);
-              const jsonUser = await resUser.json();
-              userNamesMap[userId as string] = jsonUser.user.username || userId;
-            } catch {
-              userNamesMap[userId as string] = userId;
-            }
-          })
-        );
+      // Ajout de authorName et filtrage
+      const ticketsWithNames = ticketsJson.recentTickets.map((t: any) => ({
+        ...t,
+        authorName: userNamesMap[t.author] || t.author,
+      }));
+      const ticketsFiltered = ticketsWithNames.filter(
+        (t: any) =>
+          t.status === 'opened' &&
+          new Date(t.created).getTime() >= oneWeekAgo
+      );
 
-        // Ajouter authorName à chaque ticket
-        const ticketsWithNames = ticketsJson.recentTickets.map((t: any) => ({
-          ...t,
-          authorName: userNamesMap[t.author] || t.author,
-        }));
-
-        // Filtrer tickets ouverts de la semaine
-        const ticketsFiltered = ticketsWithNames.filter(
-          (t: any) =>
-            t.status === 'opened' && new Date(t.created).getTime() >= oneWeekAgo
-        );
-
-        setRecentTickets(ticketsFiltered);
-      } catch (err: any) {
-        setError(err.message);
-      }
+      setRecentTickets(ticketsFiltered);
     };
 
-    setLoading(true);
-    setError(null); // Reset l'erreur à chaque nouveau fetch
-    await Promise.all([fetchStats(), fetchDashboard()]);
+    // Sous-fonction pour les utilisateurs non-admin
+    const fetchDashboardUser = async (token: string) => {
+      const res = await fetch(
+        'https://ticketing.development.atelier.ovh/api/mobile/dashboard',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      const data = (await res.json()) as DashboardUserResponse;
+      const userTickets = data.recentTickets.filter(
+        (t: any) => t.author === user?.id
+      );
+      const total = userTickets.length;
+      const opened = userTickets.filter((t) => t.status === 'opened').length;
+      const closed = userTickets.filter((t) => t.status === 'closed').length;
+
+      const recalculatedStats: Stats = {
+        projects: data.projects.length,
+        tickets: {
+          byPriority: {}, // à reconstruire si besoin
+          byStatus: { opened, closed },
+          total,
+        },
+      };
+
+      return { recentTickets: userTickets, stats: recalculatedStats };
+    };
+
+    // Exécution selon le rôle
+    if (user?.admin) {
+      await Promise.all([fetchStats(token), fetchDashboard(token)]);
+    } else {
+      const { recentTickets: userTickets, stats: userStats } =
+        await fetchDashboardUser(token);
+      setRecentTickets(userTickets);
+      setStats(userStats);
+    }
+  } catch (err: any) {
+    setError(err.message);
+  } finally {
     setLoading(false);
-  }, []);
+  }
+}, [user]);
 
   // Utiliser useFocusEffect au lieu de useEffect
   useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData])
-  );
+  useCallback(() => {
+    setLoading(true);
+    setError(null);
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData])
+);
+
 
 
   if (loading) {
