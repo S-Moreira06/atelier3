@@ -258,26 +258,26 @@ const resetFilters = () => {
   // Fonctions pour obtenir les couleurs
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return '#dc3545';
+      case 'high': return '#E74A34';
       case 'medium': return '#ffc107';
-      case 'low': return '#28a745';
-      case 'urgent': return '#e74c3c';
-      default: return '#6c757d';
+      case 'low': return '#00988f';
+      case 'urgent': return '#E74A34';
+      default: return '#80791eff';
     }
   };
   const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'opened':      return '#28a745';
-    case 'in progress': return '#007bff';
-    case 'closed':      return '#6c757d';
-    default:            return '#ffc107';
-  }
-};
+    switch (status.toLowerCase()) {
+      case 'opened':      return '#00988f';
+      case 'in progress': return '#0062FF';
+      case 'closed':      return '#6c757d';
+      default:            return '#ffc107';
+    }
+  };
 
   if (loading && tickets.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#0062ff" />
       </View>
     );
   }
@@ -446,10 +446,9 @@ const resetFilters = () => {
           <View>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>Liste des Tickets</Text>
-
-            </View>
-
+                        <Text style={styles.title}>LaPlateforme - Ticketing</Text>
+                        <Text style={styles.subTitle}>Liste des Tickets</Text>
+                      </View>
             {/* Filtres de recherche */}
             <View style={styles.filtersContainer}>
               <TextInput
@@ -572,24 +571,25 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f9f9f9' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { color: 'red', fontSize: 16, textAlign: 'center', marginBottom: 16 },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  retryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   container: { padding: 16 },
-header: { 
+  header: { 
     alignItems: 'center', 
     marginBottom: 10, 
     marginHorizontal: -16, 
     marginTop: -16, 
     borderBottomWidth: 1, 
     borderBottomColor: '#302c2cff',
-    backgroundColor: '#0062ff'},
+    backgroundColor: '#0062ff'
+  },
   title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  subTitle: { fontSize: 16, color: '#555', marginTop: 4 },
+  subTitle: { fontSize: 18, color: '#ffffff', marginTop: 4 },
+  retryButton: {
+    backgroundColor: '#0062ff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   
   // Styles pour les filtres
   filtersContainer: {
@@ -666,7 +666,7 @@ header: {
     color: '#333',
   },
   selectedDropdownText: {
-    color: '#007AFF',
+    color: '#0062ff',
     fontWeight: '600',
   },
 
@@ -691,8 +691,8 @@ header: {
     justifyContent: 'center',
   },
   checkedCheckbox: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#0062ff',
+    borderColor: '#0062ff',
   },
   checkmark: {
     color: '#fff',
@@ -724,7 +724,7 @@ header: {
   },
   closeButton: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0062ff',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
@@ -787,7 +787,7 @@ header: {
     marginRight: 8,
   },
   activeSortButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0062ff',
   },
   sortButtonText: {
     fontSize: 14,
@@ -877,7 +877,7 @@ separator: {
   },
   // Bouton actif de filtre de statut
   activeFilterButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0062ff',
   },
   // Texte des boutons de filtre
   filterButtonText: {

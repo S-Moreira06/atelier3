@@ -251,8 +251,12 @@ export default function Dashboard() {
           >
             <Text style={styles.greenButtonText}>+ Créer un ticket</Text>
           </TouchableOpacity>
-          <Text style={styles.sectionTitle}>Tickets ouverts de la semaine</Text>
-        </>
+          {user?.admin ? (
+            <Text style={styles.sectionTitle}>Tickets ouverts de la semaine</Text>
+          ) : (
+            <Text style={styles.sectionTitle}>Vos tickets</Text>
+          )}
+          </>
       )}
       renderItem={({ item }) => (
         <TicketItem
@@ -278,7 +282,6 @@ const styles = StyleSheet.create({
     marginTop: -16, 
     borderBottomWidth: 1, 
     borderBottomColor: '#302c2cff',
-    
     backgroundColor: '#0062ff'},
   title: { fontSize: 24, fontWeight: 'bold', color: '#ffffffff', },
   subTitle: { fontSize: 18, marginTop: 4, color: '#ffffffff',},
