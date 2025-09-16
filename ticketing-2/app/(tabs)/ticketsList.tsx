@@ -267,7 +267,7 @@ const resetFilters = () => {
   };
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'opened':      return '#00988f';
+      case 'opened':      return '#0062FF';
       case 'in progress': return '#0062FF';
       case 'closed':      return '#6c757d';
       default:            return '#ffc107';
