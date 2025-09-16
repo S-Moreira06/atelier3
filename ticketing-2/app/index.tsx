@@ -48,7 +48,13 @@ export default function LoginScreen() {
         await signIn(data.access_token, userInfo);
         router.replace('/(tabs)/dashboard');
       } else {
-        Alert.alert('Erreur de connexion', data.message || 'Vérifiez vos identifiants');
+        if (response.status === 401) {
+          Alert.alert('Erreur', 'Identifiants incorrects');
+        } else if (response.status === 429) {
+          Alert.alert('Erreur', 'Trop de tentatives, réessayez plus tard');
+        } else {
+          Alert.alert('Erreur de connexion', data.message || 'Vérifiez vos identifiants');
+        }
       }
     } catch (error) {
       Alert.alert('Erreur réseau', 'Impossible de joindre le serveur');
