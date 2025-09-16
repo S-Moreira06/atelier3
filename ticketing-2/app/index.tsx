@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import SVGComponent from './components/SvgLogo';
 import { AuthContext, User } from './context/AuthContext';
 
 export default function LoginScreen() {
@@ -58,11 +59,11 @@ export default function LoginScreen() {
   };
 
   return (
-    
-    
-    <View style={styles.container}>
-      <Text style={styles.title}>Connexion</Text>
 
+    <View style={styles.container}>
+      <SVGComponent style={styles.marginLogo}/>
+      <Text style={styles.title}>Service de ticketing</Text>
+      <Text style={styles.title}>Connexion</Text>
       <TextInput
         style={styles.input}
         placeholder="Email ou identité"
@@ -72,7 +73,6 @@ export default function LoginScreen() {
         autoCapitalize="none"
         autoComplete="email"
       />
-
       <TextInput
         style={styles.input}
         placeholder="Mot de passe"
@@ -82,7 +82,6 @@ export default function LoginScreen() {
         autoCapitalize="none"
         autoComplete="password"
       />
-
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         {loading
           ? <ActivityIndicator color="#fff" />
@@ -93,19 +92,20 @@ export default function LoginScreen() {
     
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex:           1,
     justifyContent: 'center',
     padding:        20,
-    backgroundColor:'#f9f9f9',
+    backgroundColor: '#0062ffc4'
   },
   title: {
     fontSize:     28,
     fontWeight:   'bold',
     marginBottom: 30,
     alignSelf:    'center',
+    color: '#fff',
+    
   },
   input: {
     height:             50,
@@ -129,4 +129,14 @@ const styles = StyleSheet.create({
     fontSize:   16,
     fontWeight: '600',
   },
+  logoMain: {
+    width:50,
+    height: 50,
+    alignSelf: 'center'
+  },
+  marginLogo: {
+    marginBottom: 30,
+    marginTop: -50,
+    alignSelf: 'center'
+  }
 });
