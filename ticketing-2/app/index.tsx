@@ -72,10 +72,12 @@ export default function LoginScreen() {
       <Text style={styles.title}>Connexion</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email ou identité"
+        placeholder="Email"
         value={identity}
         onChangeText={setIdentity}
         keyboardType="email-address"
+        accessibilityLabel="Champ email"
+        accessibilityHint="Saisissez votre email"
         autoCapitalize="none"
         autoComplete="email"
       />
@@ -88,11 +90,18 @@ export default function LoginScreen() {
         autoCapitalize="none"
         autoComplete="password"
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+      <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleLogin} disabled={loading}>
         {loading
           ? <ActivityIndicator color="#fff" />
           : <Text style={styles.buttonText}>Se connecter</Text>
         }
+      </TouchableOpacity>
+      {/* Bouton DevMode */}
+      <TouchableOpacity 
+        style={styles.devModeButton} 
+        onPress={() => router.push('/devMode')}
+      >
+        <Text style={styles.devModeText}>🚀 Dev Mode</Text>
       </TouchableOpacity>
     </View>
     
@@ -130,10 +139,29 @@ const styles = StyleSheet.create({
     alignItems:      'center',
     marginTop:       10,
   },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   buttonText: {
     color:      '#fff',
     fontSize:   16,
     fontWeight: '600',
+  },
+  devModeButton: {
+    position: 'absolute',
+    bottom: 50,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  devModeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   logoMain: {
     width:50,
