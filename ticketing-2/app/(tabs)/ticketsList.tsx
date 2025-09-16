@@ -580,8 +580,15 @@ const styles = StyleSheet.create({
   },
   retryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   container: { padding: 16 },
-  header: { alignItems: 'center', marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: 'bold' },
+header: { 
+    alignItems: 'center', 
+    marginBottom: 10, 
+    marginHorizontal: -16, 
+    marginTop: -16, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#302c2cff',
+    backgroundColor: '#0062ff'},
+  title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
   subTitle: { fontSize: 16, color: '#555', marginTop: 4 },
   
   // Styles pour les filtres
