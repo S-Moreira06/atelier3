@@ -31,10 +31,21 @@ type Stats = {
     total: number;
   };
 };
-type DashboardUserResponse = {
+interface DashboardUserResponse  {
   recentTickets: Ticket[];
   projects: any[];
 };
+interface DashboardAdminResponse {
+  projects: any[];
+  recentTickets: Ticket[];
+}
+interface DashboardStatsResponse {
+  byPriority: { [key: string]: number };
+  byStatus: { opened: number; closed: number };
+  total: number;
+}
+
+
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
